@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Phòng Trọ & KTX Mini - SmartHostel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .active-nav {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white !important;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex h-screen overflow-hidden antialiased">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Sidebar Layout -->
+    <aside class="w-72 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 shadow-2xl relative z-20">
+        <!-- Brand Logo Header -->
+        <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xl font-extrabold shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-building-user"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-lg tracking-tight leading-tight">SmartHostel<span class="text-blue-500">.io</span></h1>
+                    <span class="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full inline-block mt-0.5">Khu Trọ An Bình</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+            <p class="px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Menu Quản Lý</p>
+            
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active-nav w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+                <span>Tổng Quan System</span>
+            </button>
+
+            <button onclick="switchTab('rooms')" id="nav-rooms" class="nav-item text-slate-400 hover:bg-slate-800/60 hover:text-white w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200">
+                <i class="fa-solid fa-door-open w-5 text-center text-base"></i>
+                <span>Quản Lý Phòng</span>
+                <span id="badge-room-count" class="ml-auto bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+            </button>
+
+            <button onclick="switchTab('tenants')" id="nav-tenants" class="nav-item text-slate-400 hover:bg-slate-800/60 hover:text-white w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200">
+                <i class="fa-solid fa-users-gear w-5 text-center text-base"></i>
+                <span>Khách Thuê (Tenants)</span>
+            </button>
+
+            <button onclick="switchTab('invoices')" id="nav-invoices" class="nav-item text-slate-400 hover:bg-slate-800/60 hover:text-white w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200">
+                <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-base"></i>
+                <span>Hóa Đơn & Tiền Điện</span>
+            </button>
+
+            <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-item text-slate-400 hover:bg-slate-800/60 hover:text-white w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200">
+                <i class="fa-solid fa-chart-line w-5 text-center text-base"></i>
+                <span>Báo Cáo & Thống Kê</span>
+            </button>
+        </nav>
+
+        <!-- Sidebar Footer Status -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-950/40">
+            <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs text-slate-300 font-medium">Local Database</span>
+                </div>
+                <button onclick="resetDataPrompt()" title="Reset về dữ liệu ban đầu" class="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 bg-slate-700/50 rounded-lg">
+                    <i class="fa-solid fa-rotate-right"></i> Reset
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Content Workspace -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        <!-- Top App Header -->
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 flex items-center justify-between px-8 sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <h2 id="page-title" class="text-xl font-extrabold text-slate-800 tracking-tight">Tổng Quan Hệ Thống</h2>
+            </div>
+            
+            <!-- Quick Actions Header -->
+            <div class="flex items-center gap-3">
+                <button onclick="openModal('modal-add-invoice')" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-calculator"></i> Tính Tiền Nhanh
+                </button>
+                <button onclick="openModal('modal-add-room')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-plus"></i> Thêm Phòng
+                </button>
+                
+                <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <p class="text-xs font-bold text-slate-800 leading-tight">Chủ Quản Lý</p>
+                        <p class="text-[11px] text-slate-500">Admin KTX</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-md">
+                        AD
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Main Content Scrollable Area -->
+        <main class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+
+            <!-- TAB 1: DASHBOARD OVERVIEW -->
+            <section id="tab-dashboard" class="tab-content space-y-8">
+                <!-- Stat Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 rounded-full group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng Phòng</span>
+                            <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-total-rooms" class="text-3xl font-extrabold text-slate-800">0</h3>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Đang quản lý</span>
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Phòng Trống</span>
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-door-open"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-available-rooms" class="text-3xl font-extrabold text-emerald-600">0</h3>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <span>Sẵn sàng cho thuê</span>
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Khách Thuê</span>
+                            <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-user-group"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-total-tenants" class="text-3xl font-extrabold text-indigo-600">0</h3>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <span class="text-indigo-600 font-bold"><i class="fa-solid fa-user-check"></i> Đang cư trú</span>
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full group-hover:scale-110 transition-transform"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Doanh Thu Tháng</span>
+                            <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-sack-dollar"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-revenue" class="text-2xl font-extrabold text-amber-600">0 đ</h3>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> Đã thu thực tế</span>
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Unpaid Invoices Priority List -->
+                <div class="glass-card rounded-3xl shadow-sm overflow-hidden border border-slate-200/80">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Hóa Đơn Chưa Thanh Toán
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Cần nhắc nhở hoặc thu tiền các hóa đơn tồn đọng</p>
+                        </div>
+                        <button onclick="switchTab('invoices')" class="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl transition-all">
+                            Xem tất cả &rarr;
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-100/60 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="p-4">Mã HĐ</th>
+                                    <th class="p-4">Số Phòng</th>
+                                    <th class="p-4">Tháng</th>
+                                    <th class="p-4">Tổng Tiền</th>
+                                    <th class="p-4">Trạng Thái</th>
+                                    <th class="p-4 text-right">Thao Tác Thu Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-unpaid-invoices" class="divide-y divide-slate-100 font-medium">
+                                <!-- Dynamic JS Output -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ROOM MANAGEMENT -->
+            <section id="tab-rooms" class="tab-content hidden space-y-6">
+                <!-- Filter Bar -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center gap-3 w-full sm:w-auto flex-1 max-w-md">
+                        <div class="relative w-full">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="search-room" oninput="renderRooms()" placeholder="Tìm số phòng (VD: P.101)..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button onclick="filterRoomByStatus('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700">Tất Cả</button>
+                        <button onclick="filterRoomByStatus('VACANT')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-100">Phòng Trống</button>
+                        <button onclick="filterRoomByStatus('OCCUPIED')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100">Đang Ở</button>
+                    </div>
+                </div>
+
+                <!-- Rooms Grid Card Container -->
+                <div id="rooms-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Dynamic Cards -->
+                </div>
+            </section>
+
+            <!-- TAB 3: TENANTS MANAGEMENT -->
+            <section id="tab-tenants" class="tab-content hidden space-y-6">
+                <!-- Action Bar -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-tenant" oninput="renderTenants()" placeholder="Tìm tên, SĐT, CCCD..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    </div>
+                    <button onclick="openModal('modal-add-tenant')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> Thêm Khách Thuê Mới
+                    </button>
+                </div>
+
+                <!-- Tenants List Table -->
+                <div class="glass-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-100/70 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="p-4">Khách Thuê</th>
+                                    <th class="p-4">Số Điện Thoại</th>
+                                    <th class="p-4">Số CCCD/CMND</th>
+                                    <th class="p-4">Phòng Đang Ở</th>
+                                    <th class="p-4">Ngày Vào Ở</th>
+                                    <th class="p-4 text-right">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tenants-list" class="divide-y divide-slate-100 font-medium">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: INVOICES & BILLING -->
+            <section id="tab-invoices" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-invoice" oninput="renderInvoices()" placeholder="Tìm số phòng hoặc mã HĐ..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    </div>
+                    <button onclick="openModal('modal-add-invoice')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-500/20 flex items-center gap-2">
+                        <i class="fa-solid fa-file-circle-plus"></i> Lập Hóa Đơn Tháng
+                    </button>
+                </div>
+
+                <div class="glass-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-100/70 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="p-4">Mã HĐ</th>
+                                    <th class="p-4">Phòng</th>
+                                    <th class="p-4">Kỳ Tháng</th>
+                                    <th class="p-4">Tiền Phòng</th>
+                                    <th class="p-4">Điện & Nước</th>
+                                    <th class="p-4">Tổng Cộng</th>
+                                    <th class="p-4">Trạng Thái</th>
+                                    <th class="p-4 text-right">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-list" class="divide-y divide-slate-100 font-medium">
+                                <!-- Dynamic Invoices Output -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: REPORTS & ANALYTICS -->
+            <section id="tab-analytics" class="tab-content hidden space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Occupancy Progress Card -->
+                    <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-pie-chart text-blue-600"></i> Tỷ Lệ Lấp Đầy Phòng
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-slate-600">Phòng Đã Thuê</span>
+                                <span id="analytics-occupancy-percent" class="text-blue-600">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div id="analytics-occupancy-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-2 text-center text-xs">
+                            <div class="bg-blue-50 p-3 rounded-2xl">
+                                <span class="text-slate-500 block">Đang Có Khách</span>
+                                <span id="analytics-occupied-count" class="text-base font-extrabold text-blue-700">0</span>
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded-2xl">
+                                <span class="text-slate-500 block">Còn Trống</span>
+                                <span id="analytics-vacant-count" class="text-base font-extrabold text-emerald-700">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Rate Card -->
+                    <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-emerald-600"></i> Tỷ Lệ Thu Hóa Đơn Tháng Này
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-slate-600">Tiền Đã Thu</span>
+                                <span id="analytics-paid-percent" class="text-emerald-600">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div id="analytics-paid-bar" class="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-2 text-center text-xs">
+                            <div class="bg-emerald-50 p-3 rounded-2xl">
+                                <span class="text-slate-500 block">Đã Thanh Toán</span>
+                                <span id="analytics-paid-amount" class="text-base font-extrabold text-emerald-700">0 đ</span>
+                            </div>
+                            <div class="bg-amber-50 p-3 rounded-2xl">
+                                <span class="text-slate-500 block">Còn Nợ Tồn</span>
+                                <span id="analytics-unpaid-amount" class="text-base font-extrabold text-amber-700">0 đ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: ADD ROOM -->
+    <div id="modal-add-room" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 transform transition-all">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Thêm Phòng Mới Vào Hệ Thống</h3>
+                <button onclick="closeModal('modal-add-room')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddRoom(event)" class="space-y-4 text-xs font-semibold">
+                <div>
+                    <label class="block text-slate-600 mb-1">Tên / Số Phòng *</label>
+                    <input type="text" id="room-number" required placeholder="Ví dụ: P.202" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Loại Phòng</label>
+                    <select id="room-type" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Phòng Đơn (Nội Thất Cơ Bản)">Phòng Đơn (Nội Thất Cơ Bản)</option>
+                        <option value="Phòng Đôi (Ban Công)">Phòng Đôi (Ban Công)</option>
+                        <option value="Giường KTX Nam/Nữ">Giường KTX Nam/Nữ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Giá Thuê Niêm Yết (VNĐ/Tháng) *</label>
+                    <input type="number" id="room-price" required placeholder="2800000" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modal-add-room')" class="px-4 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20">Lưu Phòng Mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD TENANT -->
+    <div id="modal-add-tenant" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Thêm Khách Thuê Mới</h3>
+                <button onclick="closeModal('modal-add-tenant')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddTenant(event)" class="space-y-4 text-xs font-semibold">
+                <div>
+                    <label class="block text-slate-600 mb-1">Họ và Tên Khách *</label>
+                    <input type="text" id="tenant-name" required placeholder="Nguyễn Văn B" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Số Điện Thoại Liên Hệ *</label>
+                    <input type="tel" id="tenant-phone" required placeholder="0988123456" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Số CCCD / CMND *</label>
+                    <input type="text" id="tenant-cccd" required placeholder="036099001234" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Chọn Phòng Trống Gán *</label>
+                    <select id="tenant-room-id" required class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <!-- Dynamic Options -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-600 mb-1">Ngày Chuyển Vào Ở</label>
+                    <input type="date" id="tenant-start-date" required class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modal-add-tenant')" class="px-4 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20">Lưu Thông Tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADD INVOICE / TÍNH TIỀN -->
+    <div id="modal-add-invoice" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-emerald-600"></i> Lập Hóa Đơn & Tính Tiền Tự Động
+                </h3>
+                <button onclick="closeModal('modal-add-invoice')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddInvoice(event)" class="space-y-4 text-xs font-semibold">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-600 mb-1">Phòng Cần Tính *</label>
+                        <select id="invoice-room-id" onchange="calculateInvoiceTotal()" required class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- Dynamic Options -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 mb-1">Kỳ Tháng / Năm *</label>
+                        <input type="month" id="invoice-month" required onchange="calculateInvoiceTotal()" class="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Electricity Input Group -->
+                <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/60 space-y-2">
+                    <p class="text-xs font-bold text-amber-700 flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> Số Điện (kWh)</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Chỉ Số Cũ</label>
+                            <input type="number" id="elec-old" value="100" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Chỉ Số Mới</label>
+                            <input type="number" id="elec-new" value="145" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Đơn Giá (đ/kWh)</label>
+                            <input type="number" id="elec-price" value="3500" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Water Input Group -->
+                <div class="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-200/60 space-y-2">
+                    <p class="text-xs font-bold text-blue-700 flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Số Nước (m³)</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Chỉ Số Cũ</label>
+                            <input type="number" id="water-old" value="25" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Chỉ Số Mới</label>
+                            <input type="number" id="water-new" value="30" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500">Đơn Giá (đ/m³)</label>
+                            <input type="number" id="water-price" value="15000" oninput="calculateInvoiceTotal()" required class="w-full p-2 rounded-xl border text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculated Invoice Summary -->
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200/60 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold text-emerald-700 block">Tổng Tiền Hóa Đơn Tự Động</span>
+                        <span id="invoice-calculated-total" class="text-xl font-extrabold text-emerald-800">0 đ</span>
+                    </div>
+                    <i class="fa-solid fa-calculator text-3xl text-emerald-400"></i>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modal-add-invoice')" class="px-4 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20">Tạo & Lưu Hóa Đơn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT LOGIC -->
+    <script>
+        // --- PRE-SEEDED INITIAL DEMO DATA ---
+        const DEFAULT_ROOMS = [
+            { id: "R101", number: "P.101", type: "Phòng Đơn (Nội Thất Cơ Bản)", price: 2500000, occupied: true },
+            { id: "R102", number: "P.102", type: "Phòng Đơn (Nội Thất Cơ Bản)", price: 2500000, occupied: true },
+            { id: "R103", number: "P.103", type: "Phòng Đôi (Ban Công)", price: 3500000, occupied: false },
+            { id: "R201", number: "P.201", type: "Giường KTX Nam/Nữ", price: 1500000, occupied: false }
+        ];
+
+        const DEFAULT_TENANTS = [
+            { id: "T1", name: "Lê Văn Hải", phone: "0912345678", cccd: "036099001122", roomId: "R101", startDate: "2026-01-15" },
+            { id: "T2", name: "Phạm Thị Như", phone: "0987654321", cccd: "036099003344", roomId: "R102", startDate: "2026-02-01" }
+        ];
+
+        const DEFAULT_INVOICES = [
+            {
+                id: "HD-101-202610",
+                roomId: "R101",
+                month: "2026-10",
+                roomPrice: 2500000,
+                elecOld: 100, elecNew: 145, elecPrice: 3500, elecTotal: 157500,
+                waterOld: 25, waterNew: 30, waterPrice: 15000, waterTotal: 75000,
+                grandTotal: 2732500,
+                status: "UNPAID"
+            },
+            {
+                id: "HD-102-202610",
+                roomId: "R102",
+                month: "2026-10",
+                roomPrice: 2500000,
+                elecOld: 80, elecNew: 110, elecPrice: 3500, elecTotal: 105000,
+                waterOld: 12, waterNew: 16, waterPrice: 15000, waterTotal: 60000,
+                grandTotal: 2665000,
+                status: "PAID"
+            }
+        ];
+
+        // --- APP STATE ---
+        let rooms = JSON.parse(localStorage.getItem('smarthostel_rooms')) || DEFAULT_ROOMS;
+        let tenants = JSON.parse(localStorage.getItem('smarthostel_tenants')) || DEFAULT_TENANTS;
+        let invoices = JSON.parse(localStorage.getItem('smarthostel_invoices')) || DEFAULT_INVOICES;
+        let currentRoomFilter = 'ALL';
+
+        function saveData() {
+            localStorage.setItem('smarthostel_rooms', JSON.stringify(rooms));
+            localStorage.setItem('smarthostel_tenants', JSON.stringify(tenants));
+            localStorage.setItem('smarthostel_invoices', JSON.stringify(invoices));
+            updateDashboardStats();
+            updateAnalytics();
+        }
+
+        function resetDataPrompt() {
+            if (confirm("Khôi phục cài đặt gốc dữ liệu mẫu ban đầu?")) {
+                localStorage.clear();
+                rooms = DEFAULT_ROOMS;
+                tenants = DEFAULT_TENANTS;
+                invoices = DEFAULT_INVOICES;
+                saveData();
+                renderAll();
+                showToast("Khôi phục dữ liệu mẫu thành công!", "info");
+            }
+        }
+
+        // --- TAB NAVIGATION ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav'));
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).classList.add('active-nav');
+
+            const titles = {
+                'dashboard': 'Tổng Quan Hệ Thống',
+                'rooms': 'Quản Lý Danh Sách Phòng',
+                'tenants': 'Danh Sách Khách Thuê',
+                'invoices': 'Quản Lý Hóa Đơn & Thu Tiền',
+                'analytics': 'Báo Cáo & Thống Kê Chi Tiết'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            renderAll();
+        }
+
+        // --- FORMATTERS ---
+        function formatVND(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        // --- DASHBOARD & STATS LOGIC ---
+        function updateDashboardStats() {
+            document.getElementById('stat-total-rooms').innerText = rooms.length;
+            document.getElementById('badge-room-count').innerText = rooms.length;
+
+            const available = rooms.filter(r => !r.occupied).length;
+            document.getElementById('stat-available-rooms').innerText = available;
+            document.getElementById('stat-total-tenants').innerText = tenants.length;
+
+            const currentMonth = "2026-10";
+            const paidRevenue = invoices
+                .filter(inv => inv.status === 'PAID')
+                .reduce((sum, inv) => sum + inv.grandTotal, 0);
+            
+            document.getElementById('stat-revenue').innerText = formatVND(paidRevenue);
+
+            // Render Unpaid Invoices on Dashboard
+            const unpaidList = invoices.filter(i => i.status === 'UNPAID');
+            const tbody = document.getElementById('dashboard-unpaid-invoices');
+
+            if (unpaidList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 text-xs">Tất cả hóa đơn đã được thanh toán xong! 🎉</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = unpaidList.map(inv => {
+                const room = rooms.find(r => r.id === inv.roomId);
+                return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-4 font-bold text-slate-700">${inv.id}</td>
+                        <td class="p-4 font-extrabold text-blue-600">${room ? room.number : 'N/A'}</td>
+                        <td class="p-4 text-xs">${inv.month}</td>
+                        <td class="p-4 font-bold text-slate-800">${formatVND(inv.grandTotal)}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 text-[10px] rounded-full bg-amber-50 text-amber-600 font-extrabold">Chưa Thu</span></td>
+                        <td class="p-4 text-right">
+                            <button onclick="markInvoicePaid('${inv.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all">
+                                <i class="fa-solid fa-check"></i> Thu Tiền
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- ROOMS LOGIC ---
+        function filterRoomByStatus(status) {
+            currentRoomFilter = status;
+            renderRooms();
+        }
+
+        function renderRooms() {
+            const query = document.getElementById('search-room')?.value.toLowerCase() || '';
+            const grid = document.getElementById('rooms-grid');
+
+            let filtered = rooms.filter(r => r.number.toLowerCase().includes(query));
+
+            if (currentRoomFilter === 'VACANT') filtered = filtered.filter(r => !r.occupied);
+            if (currentRoomFilter === 'OCCUPIED') filtered = filtered.filter(r => r.occupied);
+
+            grid.innerHTML = filtered.map(r => `
+                <div class="glass-card p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-xl font-extrabold text-slate-800 tracking-tight">${r.number}</h4>
+                                <span class="text-[11px] text-slate-500 font-medium">${r.type}</span>
+                            </div>
+                            <span class="px-2.5 py-1 text-[10px] rounded-full font-extrabold ${r.occupied ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}">
+                                ${r.occupied ? 'Đang Ở' : 'Phòng Trống'}
+                            </span>
+                        </div>
+                        <p class="text-lg font-black text-blue-600 mb-4">${formatVND(r.price)} <span class="text-[10px] font-normal text-slate-400">/tháng</span></p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <button onclick="toggleRoomStatus('${r.id}')" class="text-slate-500 hover:text-slate-800 font-bold">
+                            Chuyển: ${r.occupied ? 'Báo Trống' : 'Báo Đang Ở'}
+                        </button>
+                        <button onclick="deleteRoom('${r.id}')" class="text-red-400 hover:text-red-600 p-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleAddRoom(e) {
+            e.preventDefault();
+            const number = document.getElementById('room-number').value.trim();
+            const type = document.getElementById('room-type').value;
+            const price = parseFloat(document.getElementById('room-price').value);
+
+            const newRoom = {
+                id: 'R' + Date.now().toString().slice(-4),
+                number, type, price, occupied: false
+            };
+
+            rooms.push(newRoom);
+            saveData();
+            closeModal('modal-add-room');
+            renderRooms();
+            showToast(`Thêm phòng ${number} thành công!`, 'success');
+            e.target.reset();
+        }
+
+        function toggleRoomStatus(roomId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (room) {
+                room.occupied = !room.occupied;
+                saveData();
+                renderRooms();
+                showToast(`Đã cập nhật trạng thái phòng ${room.number}`);
+            }
+        }
+
+        function deleteRoom(roomId) {
+            if (confirm("Xóa thông tin phòng này?")) {
+                rooms = rooms.filter(r => r.id !== roomId);
+                saveData();
+                renderRooms();
+                showToast("Đã xóa phòng khỏi hệ thống!", "warning");
+            }
+        }
+
+        // --- TENANTS LOGIC ---
+        function renderTenants() {
+            const query = document.getElementById('search-tenant')?.value.toLowerCase() || '';
+            const list = document.getElementById('tenants-list');
+
+            const filtered = tenants.filter(t => 
+                t.name.toLowerCase().includes(query) || 
+                t.phone.includes(query) || 
+                t.cccd.includes(query)
+            );
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 text-xs">Không tìm thấy thông tin khách thuê</td></tr>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(t => {
+                const room = rooms.find(r => r.id === t.roomId);
+                return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-4 font-bold text-slate-800">${t.name}</td>
+                        <td class="p-4 text-slate-600 font-semibold">${t.phone}</td>
+                        <td class="p-4 text-slate-500">${t.cccd}</td>
+                        <td class="p-4 font-extrabold text-blue-600">${room ? room.number : 'Chưa xếp'}</td>
+                        <td class="p-4 text-slate-500 text-xs">${t.startDate}</td>
+                        <td class="p-4 text-right">
+                            <button onclick="deleteTenant('${t.id}')" class="text-red-400 hover:text-red-600 p-1">
+                                <i class="fa-solid fa-user-minus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateRoomDropdowns() {
+            const tenantSelect = document.getElementById('tenant-room-id');
+            const invoiceSelect = document.getElementById('invoice-room-id');
+
+            const availableRooms = rooms.filter(r => !r.occupied);
+            tenantSelect.innerHTML = availableRooms.length ? 
+                availableRooms.map(r => `<option value="${r.id}">${r.number} (${formatVND(r.price)})</option>`).join('') :
+                `<option value="">Hết phòng trống</option>`;
+
+            invoiceSelect.innerHTML = rooms.map(r => `<option value="${r.id}">${r.number}</option>`).join('');
+        }
+
+        function handleAddTenant(e) {
+            e.preventDefault();
+            const name = document.getElementById('tenant-name').value.trim();
+            const phone = document.getElementById('tenant-phone').value.trim();
+            const cccd = document.getElementById('tenant-cccd').value.trim();
+            const roomId = document.getElementById('tenant-room-id').value;
+            const startDate = document.getElementById('tenant-start-date').value;
+
+            if (!roomId) {
+                showToast("Hãy chọn phòng trống khả dụng!", "error");
+                return;
+            }
+
+            const newTenant = {
+                id: 'T' + Date.now().toString().slice(-4),
+                name, phone, cccd, roomId, startDate
+            };
+
+            const room = rooms.find(r => r.id === roomId);
+            if (room) room.occupied = true;
+
+            tenants.push(newTenant);
+            saveData();
+            closeModal('modal-add-tenant');
+            renderTenants();
+            showToast(`Thêm khách ${name} thành công!`, "success");
+            e.target.reset();
+        }
+
+        function deleteTenant(tenantId) {
+            if (confirm("Chắc chắn muốn xóa khách thuê này?")) {
+                const tenant = tenants.find(t => t.id === tenantId);
+                if (tenant) {
+                    const room = rooms.find(r => r.id === tenant.roomId);
+                    if (room) room.occupied = false;
+                }
+                tenants = tenants.filter(t => t.id !== tenantId);
+                saveData();
+                renderTenants();
+                showToast("Đã xóa khách thuê!", "warning");
+            }
+        }
+
+        // --- INVOICES & BILLING LOGIC ---
+        function renderInvoices() {
+            const query = document.getElementById('search-invoice')?.value.toLowerCase() || '';
+            const list = document.getElementById('invoices-list');
+
+            const filtered = invoices.filter(inv => {
+                const room = rooms.find(r => r.id === inv.roomId);
+                const roomNum = room ? room.number.toLowerCase() : '';
+                return inv.id.toLowerCase().includes(query) || roomNum.includes(query);
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 text-xs">Chưa có dữ liệu hóa đơn</td></tr>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(inv => {
+                const room = rooms.find(r => r.id === inv.roomId);
+                const isPaid = inv.status === 'PAID';
+                return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-4 font-bold text-slate-700">${inv.id}</td>
+                        <td class="p-4 font-extrabold text-blue-600">${room ? room.number : 'N/A'}</td>
+                        <td class="p-4 text-xs">${inv.month}</td>
+                        <td class="p-4">${formatVND(inv.roomPrice)}</td>
+                        <td class="p-4 text-xs">
+                            ⚡ ${formatVND(inv.elecTotal)}<br>
+                            💧 ${formatVND(inv.waterTotal)}
+                        </td>
+                        <td class="p-4 font-extrabold text-slate-800">${formatVND(inv.grandTotal)}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 text-[10px] rounded-full font-extrabold ${isPaid ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}">
+                                ${isPaid ? 'Đã Thanh Toán' : 'Chờ Thu Tiền'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right space-x-2">
+                            ${!isPaid ? `
+                                <button onclick="markInvoicePaid('${inv.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">
+                                    <i class="fa-solid fa-check"></i> Thu
+                                </button>
+                            ` : ''}
+                            <button onclick="deleteInvoice('${inv.id}')" class="text-red-400 hover:text-red-600 p-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function calculateInvoiceTotal() {
+            const roomId = document.getElementById('invoice-room-id').value;
+            const room = rooms.find(r => r.id === roomId);
+            const roomPrice = room ? room.price : 0;
+
+            const elecOld = parseFloat(document.getElementById('elec-old').value) || 0;
+            const elecNew = parseFloat(document.getElementById('elec-new').value) || 0;
+            const elecPrice = parseFloat(document.getElementById('elec-price').value) || 0;
+            const elecTotal = Math.max(0, elecNew - elecOld) * elecPrice;
+
+            const waterOld = parseFloat(document.getElementById('water-old').value) || 0;
+            const waterNew = parseFloat(document.getElementById('water-new').value) || 0;
+            const waterPrice = parseFloat(document.getElementById('water-price').value) || 0;
+            const waterTotal = Math.max(0, waterNew - waterOld) * waterPrice;
+
+            const grandTotal = roomPrice + elecTotal + waterTotal;
+            document.getElementById('invoice-calculated-total').innerText = formatVND(grandTotal);
+            return { roomPrice, elecTotal, waterTotal, grandTotal };
+        }
+
+        function handleAddInvoice(e) {
+            e.preventDefault();
+            const roomId = document.getElementById('invoice-room-id').value;
+            const month = document.getElementById('invoice-month').value;
+            const room = rooms.find(r => r.id === roomId);
+
+            const totals = calculateInvoiceTotal();
+
+            const newInvoice = {
+                id: `HD-${room ? room.number.replace('.', '') : '00'}-${month.replace('-', '')}`,
+                roomId,
+                month,
+                roomPrice: totals.roomPrice,
+                elecOld: parseFloat(document.getElementById('elec-old').value),
+                elecNew: parseFloat(document.getElementById('elec-new').value),
+                elecPrice: parseFloat(document.getElementById('elec-price').value),
+                elecTotal: totals.elecTotal,
+                waterOld: parseFloat(document.getElementById('water-old').value),
+                waterNew: parseFloat(document.getElementById('water-new').value),
+                waterPrice: parseFloat(document.getElementById('water-price').value),
+                waterTotal: totals.waterTotal,
+                grandTotal: totals.grandTotal,
+                status: "UNPAID"
+            };
+
+            invoices.unshift(newInvoice);
+            saveData();
+            closeModal('modal-add-invoice');
+            renderInvoices();
+            showToast("Đã lập hóa đơn thành công!", "success");
+        }
+
+        function markInvoicePaid(invoiceId) {
+            const inv = invoices.find(i => i.id === invoiceId);
+            if (inv) {
+                inv.status = 'PAID';
+                saveData();
+                renderInvoices();
+                showToast(`Thu tiền hóa đơn ${inv.id} thành công!`, "success");
+            }
+        }
+
+        function deleteInvoice(invoiceId) {
+            if (confirm("Xóa hóa đơn này?")) {
+                invoices = invoices.filter(i => i.id !== invoiceId);
+                saveData();
+                renderInvoices();
+                showToast("Đã xóa hóa đơn!", "warning");
+            }
+        }
+
+        // --- ANALYTICS LOGIC ---
+        function updateAnalytics() {
+            const total = rooms.length;
+            const occupied = rooms.filter(r => r.occupied).length;
+            const vacant = total - occupied;
+            const percentOccupied = total ? Math.round((occupied / total) * 100) : 0;
+
+            document.getElementById('analytics-occupancy-percent').innerText = `${percentOccupied}%`;
+            document.getElementById('analytics-occupancy-bar').style.width = `${percentOccupied}%`;
+            document.getElementById('analytics-occupied-count').innerText = occupied;
+            document.getElementById('analytics-vacant-count').innerText = vacant;
+
+            const paidTotal = invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.grandTotal, 0);
+            const unpaidTotal = invoices.filter(i => i.status === 'UNPAID').reduce((sum, i) => sum + i.grandTotal, 0);
+            const grandSum = paidTotal + unpaidTotal;
+            const percentPaid = grandSum ? Math.round((paidTotal / grandSum) * 100) : 0;
+
+            document.getElementById('analytics-paid-percent').innerText = `${percentPaid}%`;
+            document.getElementById('analytics-paid-bar').style.width = `${percentPaid}%`;
+            document.getElementById('analytics-paid-amount').innerText = formatVND(paidTotal);
+            document.getElementById('analytics-unpaid-amount').innerText = formatVND(unpaidTotal);
+        }
+
+        // --- UTILS & MODAL CONTROLS ---
+        function openModal(id) {
+            populateRoomDropdowns();
+            if (id === 'modal-add-invoice') {
+                document.getElementById('invoice-month').value = "2026-10";
+                calculateInvoiceTotal();
+            }
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-600',
+                warning: 'bg-amber-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
+
+            toast.className = `${bgColors[type]} text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 pointer-events-auto transition-all duration-300 transform translate-x-5 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-x-5', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-5');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function renderAll() {
+            updateDashboardStats();
+            renderRooms();
+            renderTenants();
+            renderInvoices();
+            updateAnalytics();
+        }
+
+        window.onload = function() {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
